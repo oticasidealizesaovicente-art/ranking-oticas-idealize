@@ -1,38 +1,57 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <title>Ranking Óticas Idealize</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <header class="topbar">
-    <div class="brand">
-      <div class="logo-circle">OI</div>
-      <div>
-        <h1>Ranking Geral – Óticas Idealize</h1>
-        <p>Consultores e Lojas em tempo real</p>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Ranking Geral – Óticas Idealize</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Painel de Ranking Geral das Óticas Idealize – desempenho de consultores e lojas em tempo real."
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Cabeçalho com logo -->
+    <header class="topbar">
+      <div class="brand">
+        <!-- ajuste o nome do arquivo se tiver subido com outro nome -->
+        <img
+          src="logo-oticas-idealize.png"
+          alt="Óticas Idealize"
+          class="logo-img"
+        />
+        <div>
+          <h1>Ranking Geral – Óticas Idealize</h1>
+          <p>Consultores e Lojas em tempo real</p>
+        </div>
       </div>
-    </div>
-  </header>
+    </header>
 
-  <main class="container">
-    <section>
-      <h2>Ranking de Consultores</h2>
-      <div id="consultores-list" class="cards-grid"></div>
-    </section>
+    <!-- Conteúdo principal -->
+    <main class="container">
+      <!-- Ranking de Consultores -->
+      <section>
+        <h2>Ranking de Consultores</h2>
+        <div id="consultores-list" class="cards-grid">
+          <!-- cards preenchidos via script.js -->
+        </div>
+      </section>
 
-    <section>
-      <h2>Ranking de Lojas</h2>
-      <div id="lojas-list" class="cards-grid"></div>
-    </section>
-  </main>
+      <!-- Ranking de Lojas -->
+      <section>
+        <h2>Ranking de Lojas</h2>
+        <div id="lojas-list" class="cards-grid">
+          <!-- cards preenchidos via script.js -->
+        </div>
+      </section>
+    </main>
 
-  <footer class="footer">
-    Atualiza automaticamente conforme a planilha do Google Sheets.
-  </footer>
+    <!-- Rodapé -->
+    <footer class="footer">
+      Painel atualizado automaticamente a partir da planilha Idealize Ranking Geral.
+    </footer>
 
-  <script type="module" src="script.js"></script>
-</body>
+    <!-- Script do painel -->
+    <script type="module" src="script.js"></script>
+  </body>
 </html>
