@@ -1,3 +1,21 @@
+/* ==========
+   Paleta Idealize
+   ========== */
+:root {
+  --idealize-dark: #08313A;        /* azul escuro do texto */
+  --idealize-teal: #009E9A;        /* teal principal */
+  --idealize-teal-dark: #007D79;   /* teal mais escuro */
+  --idealize-teal-light: #00B3AC;  /* teal claro */
+  --idealize-orange: #F79C2E;      /* laranja da logo */
+
+  --background: #F5F8FA;
+  --card-bg: #FFFFFF;
+  --text-main: #08313A;
+}
+
+/* ==========
+   Base
+   ========== */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -6,49 +24,56 @@
 }
 
 body {
-  background: #f4f6fb;
-  color: #0f172a;
+  background: var(--background);
+  color: var(--text-main);
 }
 
+/* ==========
+   Topo / Header
+   ========== */
 .topbar {
-  background: #021b3a;
-  color: #f9fafb;
+  background: #ffffff;
+  color: var(--idealize-dark);
   padding: 16px 24px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.4);
   position: sticky;
   top: 0;
   z-index: 10;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.04);
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
-.logo-circle {
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #00b4d8, #48cae4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 14px;
+.logo-img {
+  height: 44px;
+  width: auto;
+  object-fit: contain;
 }
 
 h1 {
   font-size: 20px;
   font-weight: 600;
+  color: var(--idealize-dark);
 }
 
 h2 {
   font-size: 18px;
   margin-bottom: 12px;
-  color: #0f172a;
+  color: var(--idealize-dark);
 }
 
+.brand p {
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* ==========
+   Layout principal
+   ========== */
 .container {
   max-width: 1120px;
   margin: 24px auto 40px;
@@ -64,11 +89,14 @@ h2 {
   gap: 16px;
 }
 
+/* ==========
+   Cards
+   ========== */
 .card {
-  background: #ffffff;
+  background: var(--card-bg);
   border-radius: 18px;
   padding: 16px 16px 14px;
-  box-shadow: 0 12px 25px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 12px 25px rgba(15, 23, 42, 0.08);
   border: 1px solid rgba(148, 163, 184, 0.25);
   display: flex;
   flex-direction: column;
@@ -81,20 +109,21 @@ h2 {
   content: "";
   position: absolute;
   inset: 0;
-  opacity: 0.06;
+  opacity: 0.07;
   pointer-events: none;
 }
 
+/* glow diferente para o top 3 */
 .card.gold::before {
-  background: linear-gradient(135deg, #f5d76e, #f4b41a);
+  background: linear-gradient(135deg, rgba(247, 156, 46, 0.6), rgba(251, 191, 36, 0.3));
 }
 
 .card.silver::before {
-  background: linear-gradient(135deg, #d1d5db, #9ca3af);
+  background: linear-gradient(135deg, rgba(209, 213, 219, 0.8), rgba(148, 163, 184, 0.4));
 }
 
 .card.bronze::before {
-  background: linear-gradient(135deg, #d97757, #b45309);
+  background: linear-gradient(135deg, rgba(248, 153, 112, 0.7), rgba(180, 83, 9, 0.25));
 }
 
 .card-header {
@@ -114,28 +143,38 @@ h2 {
   color: #64748b;
 }
 
+/* ==========
+   Medalhas / posição
+   ========== */
 .badge-pos {
   padding: 3px 10px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
 .badge-pos.gold {
-  background: #facc15;
+  background: #FBBF24;
   color: #422006;
 }
 
 .badge-pos.silver {
-  background: #e5e7eb;
+  background: #E5E7EB;
   color: #111827;
 }
 
 .badge-pos.bronze {
-  background: #fed7aa;
-  color: #7c2d12;
+  background: #FED7AA;
+  color: #7C2D12;
 }
 
+/* ==========
+   Linhas de informação
+   ========== */
 .meta-row {
   display: flex;
   justify-content: space-between;
@@ -143,6 +182,9 @@ h2 {
   color: #475569;
 }
 
+/* ==========
+   Barra de progresso
+   ========== */
 .progress-wrapper {
   margin-top: 6px;
 }
@@ -158,9 +200,12 @@ h2 {
 .progress-bar-fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #22c55e, #16a34a);
+  background: linear-gradient(90deg, var(--idealize-teal-light), var(--idealize-teal-dark));
 }
 
+/* ==========
+   Status chips
+   ========== */
 .status-chip {
   margin-top: 6px;
   display: inline-flex;
@@ -169,21 +214,48 @@ h2 {
   padding: 3px 9px;
   border-radius: 999px;
   font-size: 11px;
+  text-transform: lowercase;
 }
 
 .status-ok {
-  background: #dcfce7;
-  color: #166534;
+  background: rgba(34, 197, 94, 0.15);
+  color: #15803d;
 }
 
 .status-bad {
-  background: #fee2e2;
+  background: rgba(248, 113, 113, 0.18);
   color: #b91c1c;
 }
 
+/* ==========
+   Rodapé
+   ========== */
 .footer {
   text-align: center;
   font-size: 12px;
   color: #94a3b8;
   padding: 12px 0 20px;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+/* ==========
+   Responsividade pequena
+   ========== */
+@media (max-width: 640px) {
+  .topbar {
+    padding: 12px 16px;
+  }
+
+  .brand {
+    align-items: flex-start;
+    flex-direction: row;
+  }
+
+  h1 {
+    font-size: 18px;
+  }
+
+  .container {
+    margin-top: 16px;
+  }
 }
