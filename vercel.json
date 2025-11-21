@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/ranking",
+      "destination": "/"
+    },
+    {
+      "source": "/ranking/(.*)",
+      "destination": "/$1"
+    }
+  ]
+}
