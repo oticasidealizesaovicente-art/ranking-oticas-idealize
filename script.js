@@ -43,15 +43,6 @@ function formatPercent(value) {
   return (Number(value) * 100).toFixed(1).replace(".", ",") + "%";
 }
 
-function formatMoney(value) {
-  if (!value && value !== 0) return "-";
-  return Number(value).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    maximumFractionDigits: 0
-  });
-}
-
 /* =========================
    RANKING DE CONSULTORES
    ========================= */
@@ -132,8 +123,6 @@ function renderLojas(data) {
 
   const lojaKey =
     Object.keys(data[0]).find((k) => k.toLowerCase().includes("loja")) || "col0";
-  const fatKey =
-    Object.keys(data[0]).find((k) => k.toLowerCase().includes("fatur")) || "col1";
   const statusKey =
     Object.keys(data[0]).find((k) => k.toLowerCase().includes("status")) || "col4";
 
@@ -157,8 +146,8 @@ function renderLojas(data) {
       </div>
 
       <div class="meta-row">
-        <span>Faturamento:</span>
-        <span><strong>${formatMoney(row[fatKey])}</strong></span>
+        <span>Entrega:</span>
+        <span><strong>${formatPercent(row[percentKey])}</strong></span>
       </div>
 
       <div class="progress-wrapper">
