@@ -52,7 +52,6 @@ function renderConsultores(data) {
   const container = document.getElementById("consultores-list");
   container.innerHTML = "";
 
-  // Tenta achar a coluna de % automaticamente
   const percentKey =
     Object.keys(data[0]).find((k) => k.toLowerCase().includes("%")) ||
     Object.keys(data[0]).find((k) => k.toLowerCase().includes("entrega")) ||
@@ -60,8 +59,6 @@ function renderConsultores(data) {
 
   const nomeKey = Object.keys(data[0]).find((k) => k.toLowerCase().includes("consultor")) || "col0";
   const lojaKey = Object.keys(data[0]).find((k) => k.toLowerCase().includes("loja")) || "col1";
-  const vendasKey = Object.keys(data[0]).find((k) => k.toLowerCase().includes("venda")) || "col2";
-  const metaKey = Object.keys(data[0]).find((k) => k.toLowerCase().includes("meta")) || "col3";
   const statusKey = Object.keys(data[0]).find((k) => k.toLowerCase().includes("status")) || "col5";
 
   const sorted = [...data].sort(
@@ -85,14 +82,12 @@ function renderConsultores(data) {
         </div>
         <div class="badge-pos ${posClass}">${posLabel}</div>
       </div>
-      <div class="meta-row">
-        <span>Vendas: <strong>${formatMoney(row[vendasKey])}</strong></span>
-        <span>Meta: <strong>${formatMoney(row[metaKey])}</strong></span>
-      </div>
+
       <div class="meta-row">
         <span>Entrega:</span>
         <span><strong>${formatPercent(row[percentKey])}</strong></span>
       </div>
+
       <div class="progress-wrapper">
         <div class="progress-bar-bg">
           <div class="progress-bar-fill" style="width:${Math.min(
@@ -101,85 +96,12 @@ function renderConsultores(data) {
           )}%;"></div>
         </div>
       </div>
+
       <div class="status-chip ${
         percent >= 1 ? "status-ok" : "status-bad"
-      }">${status || (percent >= 1 ? "Meta batida" : "Abaixo da meta")}</div>
+      }">${status || (percent >= 1 ? "bateu a meta" : "não bateu")}</div>
     `;
 
     container.appendChild(card);
   });
 }
-
-function renderLojas(data) {
-  const container = document.getElementById("lojas-list");
-  container.innerHTML = "";
-
-  const percentKey =
-    Object.keys(data[0]).find((k) => k.toLowerCase().includes("%")) ||
-    Object.keys(data[0]).find((k) => k.toLowerCase().includes("entrega")) ||
-    "col3";
-
-  const lojaKey = Object.keys(data[0]).find((k) => k.toLowerCase().includes("loja")) || "col0";
-  const fatKey =
-    Object.keys(data[0]).find((k) => k.toLowerCase().includes("fatur")) || "col1";
-  const metaKey = Object.keys(data[0]).find((k) => k.toLowerCase().includes("meta")) || "col2";
-  const statusKey = Object.keys(data[0]).find((k) => k.toLowerCase().includes("status")) || "col4";
-
-  const sorted = [...data].sort(
-    (a, b) => Number(b[percentKey] || 0) - Number(a[percentKey] || 0)
-  );
-
-  sorted.forEach((row, idx) => {
-    const posClass = getPositionClass(idx);
-    const posLabel = getPosLabel(idx);
-    const percent = Number(row[percentKey] || 0);
-    const status = String(row[statusKey] || "").toLowerCase();
-
-    const card = document.createElement("article");
-    card.className = `card ${posClass}`;
-
-    card.innerHTML = `
-      <div class="card-header">
-        <div class="card-title">${row[lojaKey] || "-"}</div>
-        <div class="badge-pos ${posClass}">${posLabel}</div>
-      </div>
-      <div class="meta-row">
-        <span>Faturamento: <strong>${formatMoney(row[fatKey])}</strong></span>
-        <span>Meta: <strong>${formatMoney(row[metaKey])}</strong></span>
-      </div>
-      <div class="meta-row">
-        <span>Entrega:</span>
-        <span><strong>${formatPercent(row[percentKey])}</strong></span>
-      </div>
-      <div class="progress-wrapper">
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" style="width:${Math.min(
-            140,
-            Math.max(0, percent * 100)
-          )}%;"></div>
-        </div>
-      </div>
-      <div class="status-chip ${
-        percent >= 1 ? "status-ok" : "status-bad"
-      }">${status || (percent >= 1 ? "Meta batida" : "Abaixo da meta")}</div>
-    `;
-
-    container.appendChild(card);
-  });
-}
-
-async function init() {
-  try {
-    const [consultores, lojas] = await Promise.all([
-      fetchSheet(GID_CONSULTORES),
-      fetchSheet(GID_LOJAS),
-    ]);
-    renderConsultores(consultores);
-    renderLojas(lojas);
-  } catch (e) {
-    console.error(e);
-    alert("Erro ao carregar dados do ranking. Confira se a planilha está pública.");
-  }
-}
-
-init();
