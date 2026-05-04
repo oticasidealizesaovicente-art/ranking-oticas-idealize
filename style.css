@@ -828,6 +828,14 @@ h1 {
 
 .btn-link:hover { text-decoration: underline; }
 
+/* Avatar fachada de loja - retangular */
+.loja-avatar {
+  border-radius: 8px !important;
+  width: 52px !important;
+  height: 40px !important;
+  object-position: center center !important;
+}
+
 /* ============================================================
    SUPER META (100%+)
    ============================================================ */
