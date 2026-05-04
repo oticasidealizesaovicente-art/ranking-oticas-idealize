@@ -249,11 +249,14 @@ function renderLojas(data) {
   const container = document.getElementById("lojas-list");
   container.innerHTML = "";
 
+  const keys = Object.keys(data[0]).filter(k => !k.startsWith("_f_"));
   const percentKey =
-    Object.keys(data[0]).find((k) => k.toLowerCase().includes("%")) ||
-    Object.keys(data[0]).find((k) => k.toLowerCase().includes("entrega")) || "col3";
-  const lojaKey = Object.keys(data[0]).find((k) => k.toLowerCase().includes("loja")) || "col0";
-  const statusKey = Object.keys(data[0]).find((k) => k.toLowerCase().includes("status")) || "col4";
+    keys.find((k) => k.toLowerCase().includes("% entrega")) ||
+    keys.find((k) => k.toLowerCase().includes("%")) ||
+    keys.find((k) => k.toLowerCase().includes("entrega")) || "col3";
+  const lojaKey = keys.find((k) => k.toLowerCase().includes("loja")) || "col0";
+  const statusKey = keys.find((k) => k.toLowerCase().includes("status")) || "col4";
+  const fotoKey = keys.find((k) => k.toLowerCase().includes("foto")) || "";
 
   const sorted = [...data].sort((a, b) => toDecimal(b[percentKey]) - toDecimal(a[percentKey]));
 
@@ -261,27 +264,38 @@ function renderLojas(data) {
     const posClass = getPositionClass(idx);
     const posLabel = getPosLabel(idx);
     const percent = toDecimal(row[percentKey]);
-    const status = String(row[statusKey] || "").replace(/[\u{1F300}-\u{1FFFF}]/gu, "").replace(/[🔴🟢🟡⚪]/g, "").trim().toLowerCase();
+    const superMeta = percent >= 1;
+    const status = String(row[statusKey] || "").replace(/[\u{1F300}-\u{1FFFF}]/gu, "").replace(/[🔴🟢🟡⚪🔥]/g, "").trim().toLowerCase();
+    const foto = fotoKey ? normalizePhotoUrl(String(row[fotoKey] || "").trim()) : "";
+    const inicial = (row[lojaKey] || "?")[0].toUpperCase();
 
     const card = document.createElement("article");
-    card.className = `card ${posClass}`;
+    card.className = `card ${posClass} ${superMeta ? "card-super" : ""}`;
     card.style.animationDelay = `${idx * 0.05}s`;
 
     card.innerHTML = `
       <div class="card-header">
-        <div class="card-title">${row[lojaKey] || "-"}</div>
+        <div class="card-header-left">
+          ${foto
+            ? `<img class="card-avatar loja-avatar" src="${foto}" alt="${row[lojaKey]}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><div class="card-avatar-placeholder" style="display:none">${inicial}</div>`
+            : `<div class="card-avatar-placeholder">${inicial}</div>`
+          }
+          <div class="card-title">${row[lojaKey] || "-"}</div>
+        </div>
         <div class="badge-pos ${posClass}">${posLabel}</div>
       </div>
       <div class="meta-row">
         <span>Entrega:</span>
-        <span><strong>${formatPercent(row[percentKey])}</strong></span>
+        <span><strong class="${superMeta ? "pct-super" : ""}">${formatPercent(row[percentKey])}</strong></span>
       </div>
       <div class="progress-wrapper">
         <div class="progress-bar-bg">
-          <div class="progress-bar-fill" style="width:${Math.min(140, Math.max(0, percent * 100))}%;"></div>
+          <div class="progress-bar-fill ${superMeta ? "bar-super" : ""}" style="width:${Math.min(100, Math.max(0, percent * 100))}%;"></div>
         </div>
       </div>
-      <div class="status-chip ${percent >= 1 ? "status-ok" : "status-bad"}">${status || (percent >= 1 ? "meta batida" : "abaixo da meta")}</div>
+      <div class="status-chip ${superMeta ? "status-super" : percent >= 1 ? "status-ok" : "status-bad"}">
+        ${superMeta ? "🔥 " : ""}${status || (superMeta ? "super meta!" : percent >= 1 ? "meta batida" : "abaixo da meta")}
+      </div>
     `;
 
     container.appendChild(card);
