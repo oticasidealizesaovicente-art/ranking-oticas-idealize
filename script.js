@@ -10,7 +10,8 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 async function fetchRankingConsultores() {
   const ciclo = new Date().toISOString().slice(0, 7); // ex: "2026-05"
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/v_ranking_atual?ciclo=eq.${ciclo}&order=posicao.asc`,
+    `${SUPABASE_URL}/rest/v1/v_ranking_atual?ciclo=eq.${ciclo}&order=posicao.asc&select=*,foto:usuarios(foto)`,
+    // Note: foto comes from join
     { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
   );
   if (!res.ok) throw new Error("Erro ao buscar consultores");
@@ -79,7 +80,7 @@ function renderPodium(top3) {
     const heightClass = dataIdx === 0 ? "podium-first" : dataIdx === 1 ? "podium-second" : "podium-third";
     const pct = Number(row.pct_meta || 0);
     const superMeta = pct >= 100;
-    const photo = getPhotoByName(row.nome);
+    const photo = normalizePhotoUrl(row.foto || '');
 
     const item = document.createElement("div");
     item.className = `podium-item ${posClass} ${heightClass}`;
@@ -124,7 +125,7 @@ function renderConsultores(data) {
     const realIdx = idx + 3;
     const pct = Number(row.pct_meta || 0);
     const superMeta = pct >= 100;
-    const photo = getPhotoByName(row.nome);
+    const photo = normalizePhotoUrl(row.foto || '');
     const inicial = (row.nome || "?")[0].toUpperCase();
 
     const card = document.createElement("article");
