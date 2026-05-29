@@ -13,45 +13,35 @@ async function fetchSheet(gid) {
   const res = await fetch(url);
   const text = await res.text();
   const json = JSON.parse(text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1));
-
-  // Monta colunas a partir dos labels
   const cols = json.table.cols.map((c) => c.label || "");
-
   const rows = json.table.rows
     .map((row) => {
       const obj = {};
       row.c.forEach((cell, idx) => {
         const key = cols[idx] || `col${idx}`;
         if (!cell) { obj[key] = ""; return; }
-        // Sempre usa cell.v (valor bruto) — para % o Google retorna 0.9142, 1.1665 etc.
         obj[key] = cell.v !== null && cell.v !== undefined ? cell.v : "";
-        // Guarda formatado como fallback para exibição
         if (cell.f) obj[`_f_${key}`] = cell.f;
       });
       return obj;
     })
     .filter((row) => Object.values(row).some(v => v !== "" && v !== null));
-
-  console.log(`[Sheet gid=${gid}] ${rows.length} linhas`, rows);
   return rows;
 }
 
-// Converte percentual para decimal — Google Sheets já entrega como decimal (0.9142, 1.1665)
-// Mas aceita strings também como fallback ("91,42%" → 0.9142)
+// ============================================================
+// HELPERS
+// ============================================================
 function toDecimal(value) {
   if (value === "" || value === null || value === undefined) return 0;
   const n = Number(value);
-  if (!isNaN(n)) return n; // já é decimal: 0.9142 ou 1.1665
-  // fallback string: "91,42%" ou "91.42%"
+  if (!isNaN(n)) return n;
   const str = String(value).replace("%", "").replace(",", ".").trim();
   const parsed = parseFloat(str);
   if (!isNaN(parsed)) return parsed > 1 ? parsed / 100 : parsed;
   return 0;
 }
 
-// ============================================================
-// HELPERS
-// ============================================================
 function getPositionClass(index) {
   if (index === 0) return "gold";
   if (index === 1) return "silver";
@@ -73,32 +63,15 @@ function formatPercent(value) {
   return (d * 100).toFixed(1).replace(".", ",") + "%";
 }
 
-// Debug: loga os dados brutos no console para diagnóstico
-function debugData(label, data) {
-  if (!data || !data.length) return;
-  const keys = Object.keys(data[0]).filter(k => !k.startsWith("_fmt_"));
-  console.group(`[Idealize] ${label} (${data.length} linhas)`);
-  data.forEach((row, i) => {
-    const vals = keys.map(k => `${k}: ${row[k]}`).join(" | ");
-    console.log(`${i+1}. ${vals}`);
-  });
-  console.groupEnd();
-}
-
-// Converte link do Google Drive para URL direta de imagem
 function normalizePhotoUrl(url) {
   if (!url) return "";
-  // Formato: https://drive.google.com/file/d/ID/view → direto
   const driveMatch = url.match(/\/file\/d\/([\w-]+)/);
   if (driveMatch) return `https://drive.google.com/uc?export=view&id=${driveMatch[1]}`;
-  // Formato: ?id=ID
   const idMatch = url.match(/[?&]id=([\w-]+)/);
   if (idMatch) return `https://drive.google.com/uc?export=view&id=${idMatch[1]}`;
-  // URL direta (outro serviço)
   return url;
 }
 
-// Chave da planilha para buscar foto do consultor por nome
 const _photoMap = {};
 
 function getPhotoByName(nome) {
@@ -112,7 +85,6 @@ function renderPodium(top3) {
   const podium = document.getElementById("podium");
   podium.innerHTML = "";
 
-  // Ordem visual: 2º | 1º | 3º
   const visualOrder = [1, 0, 2];
 
   visualOrder.forEach((dataIdx) => {
@@ -172,10 +144,6 @@ function renderConsultores(data) {
   const statusKey = keys.find((k) => k.toLowerCase().includes("status")) || "col5";
   const fotoKey = keys.find((k) => k.toLowerCase().includes("foto")) || "";
 
-  console.log(`[Consultores] percentKey="${percentKey}" nomeKey="${nomeKey}"`);
-  console.log(`[Consultores] valores %:`, data.map(r => ({ nome: r[nomeKey], pct: r[percentKey], dec: toDecimal(r[percentKey]) })));
-
-  // Popula o mapa de fotos por nome
   if (fotoKey) {
     data.forEach((row) => {
       const nome = String(row[nomeKey] || "").trim().toLowerCase();
@@ -185,14 +153,10 @@ function renderConsultores(data) {
   }
 
   const sorted = [...data].sort((a, b) => toDecimal(b[percentKey]) - toDecimal(a[percentKey]));
-
-  // Top 3 vai pro pódio
   const top3 = sorted.slice(0, 3);
   renderPodium(top3);
 
-  // 4º em diante ficam nos cards
   const rest = sorted.slice(3);
-
   if (rest.length === 0) {
     container.innerHTML = `<p class="rest-empty">Apenas os 3 primeiros colocados este período.</p>`;
     return;
@@ -303,96 +267,18 @@ function renderLojas(data) {
 }
 
 // ============================================================
-// ADMIN MODAL
-// ============================================================
-function initAdmin() {
-  const overlay = document.getElementById("modalOverlay");
-  const btnAdmin = document.getElementById("btnAdmin");
-  const btnClose = document.getElementById("modalClose");
-
-  btnAdmin.addEventListener("click", () => {
-    overlay.classList.add("open");
-  });
-
-  btnClose.addEventListener("click", () => overlay.classList.remove("open"));
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) overlay.classList.remove("open");
-  });
-
-  // Tabs
-  document.querySelectorAll(".tab-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
-      document.querySelectorAll(".tab-content").forEach((t) => t.classList.remove("active"));
-      btn.classList.add("active");
-      document.getElementById(`tab-${btn.dataset.tab}`).classList.add("active");
-    });
-  });
-
-  // Copiar URL webhook
-  const btnCopy = document.getElementById("btnCopyUrl");
-  if (btnCopy) {
-    btnCopy.addEventListener("click", () => {
-      const url = document.getElementById("webhookUrl").textContent;
-      navigator.clipboard.writeText(url).then(() => {
-        btnCopy.textContent = "✅ Copiado!";
-        setTimeout(() => (btnCopy.textContent = "📋 Copiar"), 2000);
-      });
-    });
-  }
-
-  // Simular webhook
-  const btnSim = document.getElementById("btnSimulate");
-  if (btnSim) btnSim.addEventListener("click", simulateWebhook);
-}
-
-// ============================================================
-// SIMULAÇÃO WEBHOOK
-// ============================================================
-function simulateWebhook() {
-  const log = document.getElementById("webhookLog");
-  const names = ["Ana Lima", "Carlos Souza", "Maria Oliveira", "João Pedro"];
-  const stores = ["Loja Centro", "Loja Santos", "Loja Cubatão"];
-  const name = names[Math.floor(Math.random() * names.length)];
-  const store = stores[Math.floor(Math.random() * stores.length)];
-  const value = (Math.random() * 2000 + 200).toFixed(2);
-  const now = new Date().toLocaleTimeString("pt-BR");
-
-  const entry = document.createElement("div");
-  entry.className = "log-entry";
-  entry.innerHTML = `<span class="log-time">${now}</span> <strong>${name}</strong> (${store}) — R$ ${Number(value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
-
-  const empty = log.querySelector(".log-empty");
-  if (empty) empty.remove();
-
-  log.prepend(entry);
-
-  // Máximo 8 entradas
-  while (log.children.length > 8) log.removeChild(log.lastChild);
-}
-
-// ============================================================
 // INIT
 // ============================================================
 async function init() {
-  initAdmin();
-
   try {
     const [consultores, lojas] = await Promise.all([
       fetchSheet(GID_CONSULTORES),
       fetchSheet(GID_LOJAS),
     ]);
 
-    if (consultores && consultores.length) {
-      debugData("CONSULTORES", consultores);
-      renderConsultores(consultores);
-    }
-    if (lojas && lojas.length) {
-      debugData("LOJAS", lojas);
-      renderLojas(lojas);
-    }
+    if (consultores && consultores.length) renderConsultores(consultores);
+    if (lojas && lojas.length) renderLojas(lojas);
 
-    // Atualiza a cada 5 minutos
     setInterval(async () => {
       const [c, l] = await Promise.all([
         fetchSheet(GID_CONSULTORES),
@@ -404,7 +290,6 @@ async function init() {
 
   } catch (e) {
     console.error(e);
-    alert("Erro ao carregar dados do ranking. Confira se a planilha está pública.");
   }
 }
 
