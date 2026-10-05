@@ -36,6 +36,7 @@ async function fetchConsultores() {
     Foto: r.foto || FOTOS[String(r.nome || "").trim().toLowerCase()] || "",
     Vendas: r.vendas || 0,
     Pontos: r.pontos_avaliacao || 0,
+    Atualizado: r.updated_at || "",
   }));
 }
 
@@ -93,6 +94,21 @@ function normalizePhotoUrl(url) {
   return url;
 }
 
+// Data/hora do ultimo lancamento, no fuso de Sao Paulo
+function formatarAtualizacao(iso) {
+  if (!iso) return { texto: "sem lançamento", dias: 999 };
+  const d = new Date(iso);
+  if (isNaN(d)) return { texto: "sem lançamento", dias: 999 };
+  const texto = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit",
+    hour: "2-digit", minute: "2-digit",
+  }).format(d).replace(", ", " às ");
+  const hoje = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
+  const dia  = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(d);
+  const dias = Math.round((new Date(hoje) - new Date(dia)) / 86400000);
+  return { texto, dias };
+}
+
 // Minimo de pontos para o bonus: metade das vendas
 function pontosMinimos(vendas) {
   return Math.ceil(Number(vendas || 0) * 0.5);
@@ -132,6 +148,7 @@ function renderPodium(top3) {
     const pontos = Number(row.Pontos || 0);
     const minPts = pontosMinimos(row.Vendas);
     const ptsOk = pontos >= minPts;
+    const atz = formatarAtualizacao(row.Atualizado);
 
     const item = document.createElement("div");
     item.className = `podium-item ${posClass} ${heightClass}`;
@@ -150,6 +167,7 @@ function renderPodium(top3) {
       <div class="podium-pct ${superMeta ? "pct-super" : ""}">${formatPercent(row[percentKey])}</div>
       <div class="podium-pontos ${ptsOk ? "pts-ok" : "pts-bad"}">⭐ ${pontos} ${pontos === 1 ? "ponto" : "pontos"}</div>
       ${superMeta ? `<div class="super-meta-badge">🔥 SUPER META</div>` : ""}
+      <div class="podium-atz ${atz.dias <= 1 ? "atz-ok" : atz.dias <= 3 ? "atz-alerta" : "atz-velho"}">${atz.texto}</div>
       <div class="podium-base ${posClass}" data-pos="${dataIdx === 0 ? '1º' : dataIdx === 1 ? '2º' : '3º'}"></div>
     `;
 
@@ -202,6 +220,7 @@ function renderConsultores(data) {
     const pontos = Number(row.Pontos || 0);
     const minPts = pontosMinimos(row.Vendas);
     const ptsOk = pontos >= minPts;
+    const atz = formatarAtualizacao(row.Atualizado);
 
     const card = document.createElement("article");
     card.className = `card ${superMeta ? "card-super" : ""}`;
@@ -236,6 +255,9 @@ function renderConsultores(data) {
       </div>
       <div class="status-chip ${superMeta ? "status-super" : percent >= 1 ? "status-ok" : "status-bad"}">
         ${superMeta ? "🔥 " : ""}${status || (superMeta ? "super meta!" : percent >= 1 ? "bateu a meta" : "não bateu")}
+      </div>
+      <div class="card-atz ${atz.dias <= 1 ? "atz-ok" : atz.dias <= 3 ? "atz-alerta" : "atz-velho"}">
+        Último lançamento: ${atz.texto}
       </div>
     `;
 
@@ -320,6 +342,16 @@ function injetarEstiloPontos() {
     .meta-row-pontos{ font-size:13px; }
     .meta-row-pontos .pts-ok { color:#0d7a5c; }
     .meta-row-pontos .pts-bad{ color:#b3302f; }
+    .podium-atz{
+      margin-top:6px; font-size:10px; font-weight:600; letter-spacing:.02em;
+    }
+    .card-atz{
+      margin-top:8px; padding-top:8px; border-top:1px solid rgba(0,0,0,.07);
+      font-size:11px; font-weight:600;
+    }
+    .atz-ok    { color:#5f6b68; }
+    .atz-alerta{ color:#b07d0a; }
+    .atz-velho { color:#b3302f; }
   `;
   document.head.appendChild(st);
 }
