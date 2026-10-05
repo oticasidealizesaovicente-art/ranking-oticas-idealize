@@ -1,4 +1,4 @@
-// ============================================================
+  // ============================================================
 // CONFIG — fonte de dados: Sistema de Metas (Supabase)
 // Antes: planilha do Google Sheets. Agora o ranking vem direto
 // do metas.oticasidealize.online, em tempo real.
@@ -46,7 +46,7 @@ async function fetchLojas() {
     Loja: r.loja || "",
     "% Entrega": Number(r.pct_meta || 0) / 100,
     Status: "",
-    Foto: "",
+    Foto: r.foto || "",
     Vendas: r.vendas || 0,
   }));
 }
@@ -165,7 +165,7 @@ function renderPodium(top3) {
       <div class="podium-name">${row[nomeKey] || "-"}</div>
       <div class="podium-store">${row[lojaKey] || ""}</div>
       <div class="podium-pct ${superMeta ? "pct-super" : ""}">${formatPercent(row[percentKey])}</div>
-      <div class="podium-pontos ${ptsOk ? "pts-ok" : "pts-bad"}">⭐ ${pontos} ${pontos === 1 ? "ponto" : "pontos"}</div>
+      <div class="podium-pontos ${ptsOk ? "pts-ok" : "pts-bad"}">${pontos} ${pontos === 1 ? "ponto" : "pontos"}</div>
       ${superMeta ? `<div class="super-meta-badge">🔥 SUPER META</div>` : ""}
       <div class="podium-atz ${atz.dias <= 1 ? "atz-ok" : atz.dias <= 3 ? "atz-alerta" : "atz-velho"}">${atz.texto}</div>
       <div class="podium-base ${posClass}" data-pos="${dataIdx === 0 ? '1º' : dataIdx === 1 ? '2º' : '3º'}"></div>
@@ -246,7 +246,7 @@ function renderConsultores(data) {
       </div>
       <div class="meta-row meta-row-pontos">
         <span>Pontos de avaliação:</span>
-        <span><strong class="${ptsOk ? "pts-ok" : "pts-bad"}">⭐ ${pontos}</strong></span>
+        <span><strong class="${ptsOk ? "pts-ok" : "pts-bad"}">${pontos}</strong></span>
       </div>
       <div class="progress-wrapper">
         <div class="progress-bar-bg">
