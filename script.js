@@ -1,32 +1,53 @@
 // ============================================================
-// CONFIG
+// CONFIG — fonte de dados: Sistema de Metas (Supabase)
+// Antes: planilha do Google Sheets. Agora o ranking vem direto
+// do metas.oticasidealize.online, em tempo real.
 // ============================================================
-const SHEET_ID = "1hAzsPEoartooj6i-9aq-aAu5xFzOKkBiuUwnao0-JnI";
-const GID_CONSULTORES = "1717862999";
-const GID_LOJAS = "0";
+const SB_URL = "https://xmkzotgwycvobeqsdpno.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhta3pvdGd3eWN2b2JlcXNkcG5vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNDU5OTksImV4cCI6MjA5MzkyMTk5OX0.pn7vPIKB9RWOjkTacrMj2H66CCysNM8lh9asmnokEjE";
+
+// Fotos dos consultores (opcional).
+// A chave e o nome em minusculas; o valor, a URL da imagem.
+// Enquanto estiver vazio, aparece a inicial do nome no lugar.
+const FOTOS = {
+  // "gabriel": "https://res.cloudinary.com/.../gabriel.jpg",
+};
 
 // ============================================================
-// FETCH PLANILHA
+// FETCH — API do Supabase
 // ============================================================
-async function fetchSheet(gid) {
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${gid}`;
-  const res = await fetch(url);
-  const text = await res.text();
-  const json = JSON.parse(text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1));
-  const cols = json.table.cols.map((c) => c.label || "");
-  const rows = json.table.rows
-    .map((row) => {
-      const obj = {};
-      row.c.forEach((cell, idx) => {
-        const key = cols[idx] || `col${idx}`;
-        if (!cell) { obj[key] = ""; return; }
-        obj[key] = cell.v !== null && cell.v !== undefined ? cell.v : "";
-        if (cell.f) obj[`_f_${key}`] = cell.f;
-      });
-      return obj;
-    })
-    .filter((row) => Object.values(row).some(v => v !== "" && v !== null));
-  return rows;
+async function sb(view) {
+  const res = await fetch(`${SB_URL}/rest/v1/${view}?select=*`, {
+    headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY },
+  });
+  if (!res.ok) throw new Error(`Supabase ${view}: ${res.status}`);
+  return res.json();
+}
+
+// Converte o retorno em linhas no mesmo formato que a planilha entregava,
+// para que o restante da pagina continue funcionando sem alteracao.
+async function fetchConsultores() {
+  const rows = await sb("v_ranking_publico");
+  return rows.map((r) => ({
+    Consultor: r.nome || "",
+    Loja: r.loja || "",
+    "% Entrega": Number(r.pct_meta || 0) / 100,  // 19.59 -> 0.1959
+    Status: "",
+    Foto: r.foto || FOTOS[String(r.nome || "").trim().toLowerCase()] || "",
+    Vendas: r.vendas || 0,
+    Pontos: r.pontos_avaliacao || 0,
+  }));
+}
+
+async function fetchLojas() {
+  const rows = await sb("v_ranking_lojas_publico");
+  return rows.map((r) => ({
+    Loja: r.loja || "",
+    "% Entrega": Number(r.pct_meta || 0) / 100,
+    Status: "",
+    Foto: "",
+    Vendas: r.vendas || 0,
+  }));
 }
 
 // ============================================================
@@ -269,25 +290,17 @@ function renderLojas(data) {
 // ============================================================
 // INIT
 // ============================================================
+async function carregar() {
+  const [consultores, lojas] = await Promise.all([fetchConsultores(), fetchLojas()]);
+  if (consultores && consultores.length) renderConsultores(consultores);
+  if (lojas && lojas.length) renderLojas(lojas);
+}
+
 async function init() {
   try {
-    const [consultores, lojas] = await Promise.all([
-      fetchSheet(GID_CONSULTORES),
-      fetchSheet(GID_LOJAS),
-    ]);
-
-    if (consultores && consultores.length) renderConsultores(consultores);
-    if (lojas && lojas.length) renderLojas(lojas);
-
-    setInterval(async () => {
-      const [c, l] = await Promise.all([
-        fetchSheet(GID_CONSULTORES),
-        fetchSheet(GID_LOJAS),
-      ]);
-      if (c && c.length) renderConsultores(c);
-      if (l && l.length) renderLojas(l);
-    }, 5 * 60 * 1000);
-
+    await carregar();
+    // atualiza a cada 2 minutos (antes eram 5, com a planilha)
+    setInterval(() => { carregar().catch(console.error); }, 2 * 60 * 1000);
   } catch (e) {
     console.error(e);
   }
