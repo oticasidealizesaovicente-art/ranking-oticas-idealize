@@ -93,6 +93,11 @@ function normalizePhotoUrl(url) {
   return url;
 }
 
+// Minimo de pontos para o bonus: metade das vendas
+function pontosMinimos(vendas) {
+  return Math.ceil(Number(vendas || 0) * 0.5);
+}
+
 const _photoMap = {};
 
 function getPhotoByName(nome) {
@@ -124,6 +129,9 @@ function renderPodium(top3) {
     const heightClass = dataIdx === 0 ? "podium-first" : dataIdx === 1 ? "podium-second" : "podium-third";
     const pct = toDecimal(row[percentKey]);
     const superMeta = pct >= 1;
+    const pontos = Number(row.Pontos || 0);
+    const minPts = pontosMinimos(row.Vendas);
+    const ptsOk = pontos >= minPts;
 
     const item = document.createElement("div");
     item.className = `podium-item ${posClass} ${heightClass}`;
@@ -140,6 +148,7 @@ function renderPodium(top3) {
       <div class="podium-name">${row[nomeKey] || "-"}</div>
       <div class="podium-store">${row[lojaKey] || ""}</div>
       <div class="podium-pct ${superMeta ? "pct-super" : ""}">${formatPercent(row[percentKey])}</div>
+      <div class="podium-pontos ${ptsOk ? "pts-ok" : "pts-bad"}">⭐ ${pontos} ${pontos === 1 ? "ponto" : "pontos"}</div>
       ${superMeta ? `<div class="super-meta-badge">🔥 SUPER META</div>` : ""}
       <div class="podium-base ${posClass}" data-pos="${dataIdx === 0 ? '1º' : dataIdx === 1 ? '2º' : '3º'}"></div>
     `;
@@ -190,6 +199,9 @@ function renderConsultores(data) {
     const status = String(row[statusKey] || "").replace(/[\u{1F300}-\u{1FFFF}]/gu, "").replace(/[🔴🟢🟡⚪🔥]/g, "").trim().toLowerCase();
     const photo = getPhotoByName(row[nomeKey]);
     const inicial = (row[nomeKey] || "?")[0].toUpperCase();
+    const pontos = Number(row.Pontos || 0);
+    const minPts = pontosMinimos(row.Vendas);
+    const ptsOk = pontos >= minPts;
 
     const card = document.createElement("article");
     card.className = `card ${superMeta ? "card-super" : ""}`;
@@ -212,6 +224,10 @@ function renderConsultores(data) {
       <div class="meta-row">
         <span>Entrega:</span>
         <span><strong class="${superMeta ? "pct-super" : ""}">${formatPercent(row[percentKey])}</strong></span>
+      </div>
+      <div class="meta-row meta-row-pontos">
+        <span>Pontos de avaliação:</span>
+        <span><strong class="${ptsOk ? "pts-ok" : "pts-bad"}">⭐ ${pontos}</strong></span>
       </div>
       <div class="progress-wrapper">
         <div class="progress-bar-bg">
@@ -288,6 +304,27 @@ function renderLojas(data) {
 }
 
 // ============================================================
+// ESTILO DOS PONTOS (injetado aqui para nao alterar o style.css)
+// ============================================================
+function injetarEstiloPontos() {
+  if (document.getElementById("estilo-pontos")) return;
+  const st = document.createElement("style");
+  st.id = "estilo-pontos";
+  st.textContent = `
+    .podium-pontos{
+      margin-top:4px; font-size:12px; font-weight:700;
+      padding:3px 10px; border-radius:99px; display:inline-block;
+    }
+    .podium-pontos.pts-ok { color:#0d7a5c; background:rgba(13,158,117,.16); }
+    .podium-pontos.pts-bad{ color:#b3302f; background:rgba(226,75,74,.14); }
+    .meta-row-pontos{ font-size:13px; }
+    .meta-row-pontos .pts-ok { color:#0d7a5c; }
+    .meta-row-pontos .pts-bad{ color:#b3302f; }
+  `;
+  document.head.appendChild(st);
+}
+
+// ============================================================
 // INIT
 // ============================================================
 async function carregar() {
@@ -298,6 +335,7 @@ async function carregar() {
 
 async function init() {
   try {
+    injetarEstiloPontos();
     await carregar();
     // atualiza a cada 2 minutos (antes eram 5, com a planilha)
     setInterval(() => { carregar().catch(console.error); }, 2 * 60 * 1000);
