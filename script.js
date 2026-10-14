@@ -1,4 +1,4 @@
-  // ============================================================
+// ============================================================
 // CONFIG — fonte de dados: Sistema de Metas (Supabase)
 // Antes: planilha do Google Sheets. Agora o ranking vem direto
 // do metas.oticasidealize.online, em tempo real.
@@ -114,6 +114,35 @@ function pontosMinimos(vendas) {
   return Math.ceil(Number(vendas || 0) * 0.5);
 }
 
+// ============================================================
+// MENSAGENS DE DESEMPENHO
+// Faixas: sem lancamento | abaixo de 50% | 50-79% | 80-99% | 100%+
+// ============================================================
+function mensagemConsultor(pct, temLancamento) {
+  if (!temLancamento) return "⚪ Bora começar! O mês está só no início";
+  if (pct >= 1)   return "🔥 Super meta! Você passou do alvo";
+  if (pct >= 0.8) return "🟢 Quase lá! Mais um empurrão e a meta é sua";
+  if (pct >= 0.5) return "🟡 No caminho certo! Mantenha o ritmo";
+  return "🔴 Vamos reagir! Hora de virar o jogo";
+}
+
+function mensagemLoja(pct, temLancamento) {
+  if (!temLancamento) return "⚪ Mês novo, jogo novo. Vamos começar";
+  if (pct >= 1)   return "🔥 Meta batida! Parabéns, time";
+  if (pct >= 0.8) return "🟢 Quase na meta! Último esforço";
+  if (pct >= 0.5) return "🟡 Time no ritmo! Vamos manter";
+  return "🔴 Atenção time! Precisamos reagir";
+}
+
+// Classe visual do chip, na mesma faixa das mensagens
+function classeChip(pct, temLancamento) {
+  if (!temLancamento) return "status-neutro";
+  if (pct >= 1)   return "status-super";
+  if (pct >= 0.8) return "status-bom";
+  if (pct >= 0.5) return "status-medio";
+  return "status-bad";
+}
+
 const _photoMap = {};
 
 function getPhotoByName(nome) {
@@ -189,7 +218,6 @@ function renderConsultores(data) {
     keys.find((k) => k.toLowerCase().includes("entrega")) || "col4";
   const nomeKey = keys.find((k) => k.toLowerCase().includes("consultor")) || "col0";
   const lojaKey = keys.find((k) => k.toLowerCase().includes("loja")) || "col1";
-  const statusKey = keys.find((k) => k.toLowerCase().includes("status")) || "col5";
   const fotoKey = keys.find((k) => k.toLowerCase().includes("foto")) || "";
 
   if (fotoKey) {
@@ -214,13 +242,13 @@ function renderConsultores(data) {
     const realIdx = idx + 3;
     const percent = toDecimal(row[percentKey]);
     const superMeta = percent >= 1;
-    const status = String(row[statusKey] || "").replace(/[\u{1F300}-\u{1FFFF}]/gu, "").replace(/[🔴🟢🟡⚪🔥]/g, "").trim().toLowerCase();
     const photo = getPhotoByName(row[nomeKey]);
     const inicial = (row[nomeKey] || "?")[0].toUpperCase();
     const pontos = Number(row.Pontos || 0);
     const minPts = pontosMinimos(row.Vendas);
     const ptsOk = pontos >= minPts;
     const atz = formatarAtualizacao(row.Atualizado);
+    const temLancamento = atz.dias !== 999 || percent > 0;
 
     const card = document.createElement("article");
     card.className = `card ${superMeta ? "card-super" : ""}`;
@@ -253,8 +281,8 @@ function renderConsultores(data) {
           <div class="progress-bar-fill ${superMeta ? "bar-super" : ""}" style="width:${Math.min(100, percent * 100)}%;"></div>
         </div>
       </div>
-      <div class="status-chip ${superMeta ? "status-super" : percent >= 1 ? "status-ok" : "status-bad"}">
-        ${superMeta ? "🔥 " : ""}${status || (superMeta ? "super meta!" : percent >= 1 ? "bateu a meta" : "não bateu")}
+      <div class="status-chip ${classeChip(percent, temLancamento)}">
+        ${mensagemConsultor(percent, temLancamento)}
       </div>
       <div class="card-atz ${atz.dias <= 1 ? "atz-ok" : atz.dias <= 3 ? "atz-alerta" : "atz-velho"}">
         Último lançamento: ${atz.texto}
@@ -278,7 +306,6 @@ function renderLojas(data) {
     keys.find((k) => k.toLowerCase().includes("%")) ||
     keys.find((k) => k.toLowerCase().includes("entrega")) || "col3";
   const lojaKey = keys.find((k) => k.toLowerCase().includes("loja")) || "col0";
-  const statusKey = keys.find((k) => k.toLowerCase().includes("status")) || "col4";
   const fotoKey = keys.find((k) => k.toLowerCase().includes("foto")) || "";
 
   const sorted = [...data].sort((a, b) => toDecimal(b[percentKey]) - toDecimal(a[percentKey]));
@@ -288,7 +315,7 @@ function renderLojas(data) {
     const posLabel = getPosLabel(idx);
     const percent = toDecimal(row[percentKey]);
     const superMeta = percent >= 1;
-    const status = String(row[statusKey] || "").replace(/[\u{1F300}-\u{1FFFF}]/gu, "").replace(/[🔴🟢🟡⚪🔥]/g, "").trim().toLowerCase();
+    const temLancamento = percent > 0;
     const foto = fotoKey ? normalizePhotoUrl(String(row[fotoKey] || "").trim()) : "";
     const inicial = (row[lojaKey] || "?")[0].toUpperCase();
 
@@ -316,8 +343,8 @@ function renderLojas(data) {
           <div class="progress-bar-fill ${superMeta ? "bar-super" : ""}" style="width:${Math.min(100, Math.max(0, percent * 100))}%;"></div>
         </div>
       </div>
-      <div class="status-chip ${superMeta ? "status-super" : percent >= 1 ? "status-ok" : "status-bad"}">
-        ${superMeta ? "🔥 " : ""}${status || (superMeta ? "super meta!" : percent >= 1 ? "meta batida" : "abaixo da meta")}
+      <div class="status-chip ${classeChip(percent, temLancamento)}">
+        ${mensagemLoja(percent, temLancamento)}
       </div>
     `;
 
@@ -352,6 +379,20 @@ function injetarEstiloPontos() {
     .atz-ok    { color:#5f6b68; }
     .atz-alerta{ color:#b07d0a; }
     .atz-velho { color:#b3302f; }
+
+    /* Faixas intermediarias das mensagens de desempenho */
+    .status-chip.status-medio{
+      color:#8a6200; background:rgba(244,119,0,.14);
+      border-color:rgba(244,119,0,.28);
+    }
+    .status-chip.status-bom{
+      color:#0d7a5c; background:rgba(22,175,163,.16);
+      border-color:rgba(22,175,163,.30);
+    }
+    .status-chip.status-neutro{
+      color:#5f6b68; background:rgba(23,61,67,.08);
+      border-color:rgba(23,61,67,.14);
+    }
   `;
   document.head.appendChild(st);
 }
