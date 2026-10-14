@@ -116,22 +116,54 @@ function pontosMinimos(vendas) {
 
 // ============================================================
 // MENSAGENS DE DESEMPENHO
-// Faixas: sem lancamento | abaixo de 50% | 50-79% | 80-99% | 100%+
 // ============================================================
+// Uma frase por faixa de 10%. A cor do chip segue as faixas de sempre:
+// vermelho < 50% | amarelo 50-79% | verde 80-99% | fogo 100%+
+const FRASES_CONSULTOR = [
+  "🔴 Largada dada! Cada venda conta",          //   0-9%
+  "🔴 Vamos reagir! Hora de virar o jogo",      //  10-19%
+  "🔴 Ritmo subindo. Bora acelerar",            //  20-29%
+  "🔴 Um terço do caminho. Não tira o pé",      //  30-39%
+  "🔴 Quase na metade! Força total",            //  40-49%
+  "🟡 Metade da meta batida!",                  //  50-59%
+  "🟡 No caminho certo! Mantenha o ritmo",      //  60-69%
+  "🟡 Reta final chegando. Segura o foco",      //  70-79%
+  "🟢 Quase lá! Mais um empurrão",              //  80-89%
+  "🟢 Falta muito pouco! A meta é sua",         //  90-99%
+  "🔥 Meta batida! Parabéns",                   // 100-109%
+  "🔥 Super meta! Você passou do alvo",         // 110-119%
+  "🔥 Imparável! Recorde à vista",              // 120%+
+];
+const FRASES_LOJA = [
+  "🔴 Mês começando. Bora, time!",              //   0-9%
+  "🔴 Atenção time! Precisamos reagir",         //  10-19%
+  "🔴 Time aquecendo. Vamos acelerar",          //  20-29%
+  "🔴 Um terço do caminho. Juntos somos mais",  //  30-39%
+  "🔴 Quase na metade! Todo mundo junto",       //  40-49%
+  "🟡 Metade da meta! O time está no jogo",     //  50-59%
+  "🟡 Time no ritmo! Vamos manter",             //  60-69%
+  "🟡 Reta final chegando. Foco total",         //  70-79%
+  "🟢 Quase na meta! Último esforço",           //  80-89%
+  "🟢 A meta está ali! Falta pouco",            //  90-99%
+  "🔥 Meta batida! Parabéns, time",             // 100-109%
+  "🔥 Super meta! Time voando",                 // 110-119%
+  "🔥 Time imparável! Recorde à vista",         // 120%+
+];
+
+// pct em decimal (0.4863 = 48,63%) -> posicao da faixa de 10 em 10
+function faixa10(pct) {
+  const p = Math.round(Number(pct || 0) * 10000) / 100;   // evita 0,29 virar 28,999...
+  return Math.max(0, Math.min(12, Math.floor(p / 10)));
+}
+
 function mensagemConsultor(pct, temLancamento) {
   if (!temLancamento) return "⚪ Bora começar! O mês está só no início";
-  if (pct >= 1)   return "🔥 Super meta! Você passou do alvo";
-  if (pct >= 0.8) return "🟢 Quase lá! Mais um empurrão e a meta é sua";
-  if (pct >= 0.5) return "🟡 No caminho certo! Mantenha o ritmo";
-  return "🔴 Vamos reagir! Hora de virar o jogo";
+  return FRASES_CONSULTOR[faixa10(pct)];
 }
 
 function mensagemLoja(pct, temLancamento) {
   if (!temLancamento) return "⚪ Mês novo, jogo novo. Vamos começar";
-  if (pct >= 1)   return "🔥 Meta batida! Parabéns, time";
-  if (pct >= 0.8) return "🟢 Quase na meta! Último esforço";
-  if (pct >= 0.5) return "🟡 Time no ritmo! Vamos manter";
-  return "🔴 Atenção time! Precisamos reagir";
+  return FRASES_LOJA[faixa10(pct)];
 }
 
 // Classe visual do chip, na mesma faixa das mensagens
